@@ -149,8 +149,9 @@ CSS = """
 # Configuração Supabase para inserção de produtos
 # -----------------------------------------------------------------------------
 load_dotenv()
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_KEY")  # Renomeado para ser mais claro
+
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]  # Renomeado para ser mais claro
 
 # Estado global do Supabase (será inicializado conforme necessário)
 supabase: Client = None
