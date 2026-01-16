@@ -83,6 +83,15 @@ CSS = """
     line-height: 1.2 !important;
     padding: 10px 8px !important;
     box-sizing: border-box !important;
+    /* Força cores claras mesmo em modo escuro */
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  div[data-testid="column"] .stButton>button[kind="secondary"]:hover,
+  .stButton>button[kind="secondary"]:hover,
+  button[kind="secondary"]:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
   }
   
   
@@ -151,7 +160,7 @@ CSS = """
 load_dotenv()
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]  # Renomeado para ser mais claro
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
 
 # Estado global do Supabase (será inicializado conforme necessário)
 supabase: Client = None
@@ -1230,6 +1239,14 @@ def main():
             const plotlyCharts = document.querySelectorAll('.js-plotly-plot, .plotly, .plot-container');
             plotlyCharts.forEach(el => {
                 el.style.backgroundColor = '#ffffff';
+            });
+            
+            // Força cores claras nos botões da navbar
+            const navButtons = document.querySelectorAll('button[kind="secondary"]');
+            navButtons.forEach(btn => {
+                btn.style.setProperty('background', 'linear-gradient(135deg, #f1f5f9, #e2e8f0)', 'important');
+                btn.style.setProperty('color', '#0f172a', 'important');
+                btn.style.setProperty('border', '1px solid #cbd5e1', 'important');
             });
         }
         
