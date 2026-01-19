@@ -1755,8 +1755,8 @@ def render_alerts_view(cal: Dict, ana: Dict) -> None:
             st.markdown("**Resumo**")
             st.markdown(a.get("resumo", ""))
             if a.get("links"):
-                st.markdown("**Fontes (até 3):**")
-                for link in a["links"][:3]:
+                st.markdown("**Fontes (até 5):**")
+                for link in a["links"][:5]:
                     st.markdown(f"- [{link['titulo']}]({link['url']})")
                     st.caption(f"  Data: {link.get('data', 'N/A')}")
 
