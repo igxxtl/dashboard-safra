@@ -38,6 +38,27 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
+MESES_LABELS = {
+    "JAN": "Janeiro",
+    "FEV": "Fevereiro",
+    "MAR": "Março",
+    "ABR": "Abril",
+    "MAI": "Maio",
+    "JUN": "Junho",
+    "JUL": "Julho",
+    "AGO": "Agosto",
+    "SET": "Setembro",
+    "OUT": "Outubro",
+    "NOV": "Novembro",
+    "DEZ": "Dezembro",
+}
+#Month number - 1 = list index
+RELATORIO_MES = MESES_LABELS.get(MESES[datetime.now().month - 1], "")
+
 # Estilos globais - tema claro forçado
 CSS = """
 <style>
@@ -990,32 +1011,9 @@ def load_data():
     except Exception as e:
         st.error(f"Erro ao carregar dados do Supabase: {e}")
         return None, None
-
-
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
-MESES_LABELS = {
-    "JAN": "Janeiro",
-    "FEV": "Fevereiro",
-    "MAR": "Março",
-    "ABR": "Abril",
-    "MAI": "Maio",
-    "JUN": "Junho",
-    "JUL": "Julho",
-    "AGO": "Agosto",
-    "SET": "Setembro",
-    "OUT": "Outubro",
-    "NOV": "Novembro",
-    "DEZ": "Dezembro",
-}
-RELATORIO_MES = datetime.now().month
-
-
+        
 def sentiment_icon(sent):
     return ""
-
 
 def build_calendar_html(produtos: List[Dict]) -> str:
     """Gera HTML + JS leve para um calendário com hover estável."""
