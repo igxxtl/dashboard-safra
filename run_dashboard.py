@@ -1,16 +1,3 @@
-"""
-Dashboard interativo (Streamlit) combinando:
-- `dashboard_calendar.json` (calendário de safra)
-- `dashboard_data.json` (análises e links)
-
-Recursos:
-- Filtros por sentimento e país
-- Métricas principais
--
-- Análises detalhadas com links
-- Distribuições por sentimento e país
-"""
-
 import html
 import json
 import os
@@ -25,7 +12,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from supabase import create_client, Client
-
 
 
 # -----------------------------------------------------------------------------
@@ -56,7 +42,7 @@ MESES_LABELS = {
     "NOV": "Novembro",
     "DEZ": "Dezembro",
 }
-#Month number - 1 = list index
+
 RELATORIO_MES = MESES_LABELS.get(MESES[datetime.now().month - 1], "")
 
 # Estilos globais - tema claro forçado
@@ -93,12 +79,68 @@ CSS = """
     color: #0f172a !important;
   }
   
-  .stApp { background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important; }
-  main .block-container { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-  .section-title { font-size: 24px; font-weight: 800; color: #0f172a; padding: 8px 0 4px 0; margin: 0 0 8px 0; letter-spacing: 0.2px; border-bottom: 2px solid #d7deeb; }
-  .section-subtitle { font-size: 18px; font-weight: 700; color: #111827; padding: 4px 0 2px 0; margin: 0 0 6px 0; }
-  .streamlit-expanderHeader { background: linear-gradient(135deg, #e8f5e9, #e3f2fd); color: #0f172a; border-radius: 8px; padding: 10px 12px; }
-  .streamlit-expanderContent { background: #ffffff; border-radius: 0 0 8px 8px; padding: 12px; }
+  .stApp { 
+    background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important; 
+  }
+  
+  main .block-container { 
+    padding-top: 2rem; 
+    padding-bottom: 2rem; 
+  }
+  
+  .section-title { 
+    font-size: 28px; 
+    font-weight: 800; 
+    color: #0f172a; 
+    padding: 12px 0 8px 0; 
+    margin: 0 0 16px 0; 
+    letter-spacing: 0.3px; 
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+    padding-left: 16px;
+    padding-right: 16px;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-subtitle { 
+    font-size: 20px; 
+    font-weight: 700; 
+    color: #1e293b; 
+    padding: 8px 0 4px 0; 
+    margin: 0 0 12px 0;
+    letter-spacing: 0.2px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.03), rgba(139, 92, 246, 0.03));
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+  }
+  
+  .streamlit-expanderHeader { 
+    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important; 
+    color: #0f172a !important; 
+    border-radius: 10px !important; 
+    padding: 14px 16px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .streamlit-expanderHeader:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-1px) !important;
+  }
+  
+  .streamlit-expanderContent { 
+    background: #ffffff !important; 
+    border-radius: 0 0 10px 10px !important; 
+    padding: 16px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(203, 213, 225, 0.5) !important;
+    border-top: none !important;
+  }
   
   /* Botões secundários da navbar */
   div[data-testid="column"] .stButton>button[kind="secondary"],
@@ -118,37 +160,45 @@ CSS = """
     line-height: 1.2 !important;
     padding: 10px 8px !important;
     box-sizing: border-box !important;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
+  
   div[data-testid="column"] .stButton>button[kind="secondary"]:hover,
   .stButton>button[kind="secondary"]:hover,
   button[kind="secondary"]:hover {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-1px) !important;
+    border-color: #94a3b8 !important;
   }
   
   /* TODOS os botões - força cores claras */
   .stButton>button,
   button[data-baseweb="button"],
-  button[kind="primary"],
-  button[kind="secondary"],
   button[kind="tertiary"],
   button {
     background-color: #ffffff !important;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
   .stButton>button:hover,
   button[data-baseweb="button"]:hover,
-  button[kind="primary"]:hover,
-  button[kind="secondary"]:hover,
   button[kind="tertiary"]:hover,
   button:hover {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
     color: #0f172a !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-1px) !important;
   }
   
   /* Botões primary mantêm cor primária mas com fundo claro */
@@ -156,12 +206,17 @@ CSS = """
   button[kind="primary"] {
     background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
     color: #ffffff !important;
-    border: 1px solid #1e40af !important;
+    border: 1.5px solid #1e40af !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
   .stButton>button[kind="primary"]:hover,
   button[kind="primary"]:hover {
     background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px) !important;
   }
   
   
@@ -173,7 +228,20 @@ CSS = """
   .stTextArea div[data-baseweb="input"] {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .stMultiSelect div[data-baseweb="select"]:focus-within,
+  .stSelectbox div[data-baseweb="select"]:focus-within,
+  .stTextInput div[data-baseweb="input"]:focus-within,
+  .stNumberInput div[data-baseweb="input"]:focus-within,
+  .stDateInput div[data-baseweb="input"]:focus-within,
+  .stTextArea div[data-baseweb="input"]:focus-within {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08) !important;
   }
   
   .stMultiSelect input,
@@ -196,9 +264,18 @@ CSS = """
   [data-baseweb="select"] button,
   .stSelectbox div[data-baseweb="select"] button:focus,
   .stMultiSelect div[data-baseweb="select"] button:focus {
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .stSelectbox div[data-baseweb="select"] button:hover,
+  .stMultiSelect div[data-baseweb="select"] button:hover,
+  [data-baseweb="select"] button:hover {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    border-color: #94a3b8 !important;
   }
 
   .streamlit-expanderHeader button:focus,
@@ -216,7 +293,10 @@ CSS = """
   .stMultiSelect [data-baseweb="popover"] {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+    padding: 4px !important;
   }
   
   [data-baseweb="popover"] [role="option"],
@@ -224,13 +304,17 @@ CSS = """
   [role="listbox"] [role="option"] {
     background-color: #ffffff !important;
     color: #0f172a !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease !important;
   }
   
   [data-baseweb="popover"] [role="option"]:hover,
   [data-baseweb="menu"] [role="option"]:hover,
   [role="listbox"] [role="option"]:hover {
-    background-color: #f1f5f9 !important;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
     color: #0f172a !important;
+    transform: translateX(2px) !important;
   }
   
   /* Força cores claras em expanders e seus conteúdos */
@@ -472,14 +556,8 @@ CSS = """
 # -----------------------------------------------------------------------------
 # Configuração Supabase para inserção de produtos
 # -----------------------------------------------------------------------------
-load_dotenv()
-
-
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_KEY")
-
-# SUPABASE_URL = st.secrets["SUPABASE_URL"]
-# SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
 
 # Estado global do Supabase (será inicializado conforme necessário)
 supabase: Client = None
@@ -1011,7 +1089,7 @@ def load_data():
     except Exception as e:
         st.error(f"Erro ao carregar dados do Supabase: {e}")
         return None, None
-        
+
 def sentiment_icon(sent):
     return ""
 
@@ -1205,49 +1283,70 @@ def render_calendar_list(produtos: List[Dict], analises: List[Dict]) -> None:
             gap: 10px;
           }}
           .cal-card-list {{
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
             min-height: 140px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+          }}
+          .cal-card-list:hover {{
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
           }}
           .cal-card-header {{
-            padding: 10px 12px;
+            padding: 12px 14px;
             font-weight: 800;
             color: #0f172a;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 2px solid rgba(203, 213, 225, 0.3);
             text-align: center;
-            background: linear-gradient(135deg, #e0f2f1, #c8e6c9);
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            background: linear-gradient(135deg, #e0f2f1, #c8e6c9, #a7f3d0);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            letter-spacing: 0.3px;
           }}
           .cal-card-body {{
-            padding: 8px 12px 12px 12px;
+            padding: 10px 14px 14px 14px;
             font-size: 13px;
             color: #374151;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
+            background: linear-gradient(135deg, #ffffff, #fafbfc);
           }}
           .cal-item {{
-            padding: 4px 6px;
-            border-radius: 6px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+            border: 1.5px solid #e5e7eb;
+            transition: all 0.2s ease;
+          }}
+          .cal-item:hover {{
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            transform: translateX(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
           }}
           .cal-item.cal-tracked {{
-            background: #fff7e6;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
             border-color: #facc15;
             color: #92400e;
             font-weight: 700;
+            box-shadow: 0 2px 6px rgba(250, 204, 21, 0.2);
+          }}
+          .cal-item.cal-tracked:hover {{
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
+            box-shadow: 0 4px 8px rgba(250, 204, 21, 0.3);
           }}
           .cal-item.cal-empty {{
             font-style: italic;
             color: #9ca3af;
-            background: #f3f4f6;
-            border: 1px dashed #e5e7eb;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border: 1.5px dashed #d1d5db;
           }}
         </style>
         <div class="cal-grid">
@@ -1280,46 +1379,76 @@ def render_metrics(calendar_data: Dict, analyses: List[Dict]) -> None:
         <style>
           .metric-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-top: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
           }
           .metric-block {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
           }
           .metric-title {
-            font-size: 13px;
-            color: #374151;
+            font-size: 14px;
+            color: #475569;
             margin: 0;
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
+            font-size: 12px;
           }
           .metric-card {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 6px 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            padding: 16px 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+            border: 1.5px solid #e5e7eb;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 110px;
+            min-height: 120px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+          }
+          .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          .metric-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08);
+            transform: translateY(-3px);
+            border-color: #cbd5e1;
+          }
+          .metric-card:hover::before {
+            opacity: 1;
           }
           .metric-value {
-            font-size: 36px;
-            color: #111827;
+            font-size: 42px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 0;
-            font-weight: 700;
+            font-weight: 800;
             line-height: 1.05;
+            letter-spacing: -0.5px;
           }
           .metric-sub {
-            font-size: 11px;
+            font-size: 12px;
             color: #6b7280;
-            margin: 4px 0 0 0;
+            margin: 6px 0 0 0;
+            font-weight: 500;
           }
         </style>
         """,
