@@ -119,18 +119,28 @@ CSS = """
   }
   
   .streamlit-expanderHeader { 
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important; 
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important; 
+    background-color: #ffffff !important;
     color: #0f172a !important; 
     border-radius: 10px !important; 
     padding: 14px 16px !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
-    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border: 1.5px solid #e5e7eb !important;
     transition: all 0.3s ease !important;
   }
   
   .streamlit-expanderHeader:hover {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    background-color: #f8fafc !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
     transform: translateY(-1px) !important;
+    border-color: #cbd5e1 !important;
+  }
+  
+  .streamlit-expanderHeader:focus,
+  .streamlit-expanderHeader:active {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    background-color: #f8fafc !important;
   }
   
   .streamlit-expanderContent { 
@@ -278,9 +288,58 @@ CSS = """
     border-color: #94a3b8 !important;
   }
 
+  /* FORÇA CORES CLARAS EM TODOS OS ESTADOS DOS EXPANDERS */
+  .streamlit-expanderHeader,
+  .streamlit-expanderHeader *,
+  [data-testid="stExpander"],
+  [data-testid="stExpander"] > div,
+  [data-testid="stExpander"] > div > div,
+  [class*="streamlit-expander"],
+  [class*="expander"] {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
+  }
+  
+  .streamlit-expanderHeader button,
+  .streamlit-expanderHeader button *,
   .streamlit-expanderHeader button:focus,
-  .streamlit-expanderHeader button {
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
+  .streamlit-expanderHeader button:hover,
+  .streamlit-expanderHeader button:active,
+  .streamlit-expanderHeader button:visited,
+  [data-testid="stExpander"] button,
+  [data-testid="stExpander"] button *,
+  [data-testid="stExpander"] button:focus,
+  [data-testid="stExpander"] button:hover,
+  [data-testid="stExpander"] button:active {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .streamlit-expanderHeader button:hover {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    background-color: #f8fafc !important;
+  }
+  
+  /* Força cores em todos os elementos dentro do header do expander */
+  .streamlit-expanderHeader span,
+  .streamlit-expanderHeader div,
+  .streamlit-expanderHeader p,
+  .streamlit-expanderHeader label,
+  .streamlit-expanderHeader strong,
+  .streamlit-expanderHeader b,
+  [data-testid="stExpander"] span,
+  [data-testid="stExpander"] div,
+  [data-testid="stExpander"] p,
+  [data-testid="stExpander"] label,
+  [data-testid="stExpander"] strong,
+  [data-testid="stExpander"] b {
+    background: transparent !important;
+    background-color: transparent !important;
     color: #0f172a !important;
   }
   
@@ -317,26 +376,76 @@ CSS = """
     transform: translateX(2px) !important;
   }
   
-  /* Força cores claras em expanders e seus conteúdos */
+  /* FORÇA CORES CLARAS EM EXPANDERS - REGRAS ADICIONAIS E MAIS ESPECÍFICAS */
   .streamlit-expanderHeader {
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
+  }
+  
+  .streamlit-expanderHeader:hover,
+  .streamlit-expanderHeader:focus,
+  .streamlit-expanderHeader:active,
+  .streamlit-expanderHeader[aria-expanded="true"],
+  .streamlit-expanderHeader[aria-expanded="false"] {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    background-color: #f8fafc !important;
     color: #0f172a !important;
   }
   
   .streamlit-expanderContent {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #0f172a !important;
+    color-scheme: light !important;
   }
   
   /* Força cores claras em todos os elementos dentro de expanders */
-  .streamlit-expanderContent * {
+  .streamlit-expanderContent *,
+  .streamlit-expanderContent *::before,
+  .streamlit-expanderContent *::after {
     color: #0f172a !important;
+    background-color: transparent !important;
   }
   
   .streamlit-expanderContent p,
   .streamlit-expanderContent div,
   .streamlit-expanderContent span,
-  .streamlit-expanderContent markdown {
+  .streamlit-expanderContent markdown,
+  .streamlit-expanderContent a,
+  .streamlit-expanderContent li,
+  .streamlit-expanderContent ul,
+  .streamlit-expanderContent ol {
+    color: #0f172a !important;
+    background-color: transparent !important;
+  }
+  
+  /* Força cores em expanders mesmo quando expandidos ou em qualquer estado */
+  [data-testid="stExpander"][aria-expanded="true"],
+  [data-testid="stExpander"][aria-expanded="false"],
+  [data-testid="stExpander"]:hover,
+  [data-testid="stExpander"]:focus,
+  [data-testid="stExpander"]:active {
+    background: transparent !important;
+    background-color: transparent !important;
+    color-scheme: light !important;
+  }
+  
+  [data-testid="stExpander"] .streamlit-expanderHeader {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  [data-testid="stExpander"] .streamlit-expanderHeader:hover {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    background-color: #f8fafc !important;
+  }
+  
+  [data-testid="stExpander"] .streamlit-expanderContent {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #0f172a !important;
   }
   
@@ -359,16 +468,6 @@ CSS = """
   .stContainer,
   [data-testid="stVerticalBlock"] {
     background-color: transparent !important;
-  }
-  
-  .streamlit-expanderHeader {
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
-    color: #0f172a !important;
-  }
-  
-  .streamlit-expanderContent {
-    background: #ffffff !important;
-    color: #0f172a !important;
   }
   
   /* Força tema claro em todos os elementos genéricos */
@@ -525,6 +624,51 @@ CSS = """
     subtree: true
   });
   
+  // Função específica para forçar cores claras em expanders
+  function forceExpanderLightTheme() {
+    // Seleciona todos os expanders
+    const expanders = document.querySelectorAll('[data-testid="stExpander"], .streamlit-expanderHeader, .streamlit-expanderContent');
+    expanders.forEach(function(expander) {
+      // Remove classes de tema escuro
+      if (expander.classList) {
+        expander.classList.remove('dark', 'Dark');
+      }
+      // Força tema claro
+      expander.setAttribute('data-theme', 'light');
+      expander.style.colorScheme = 'light';
+      
+      // Força cores específicas no header
+      if (expander.classList && expander.classList.contains('streamlit-expanderHeader')) {
+        expander.style.background = 'linear-gradient(135deg, #ffffff, #f8fafc)';
+        expander.style.backgroundColor = '#ffffff';
+        expander.style.color = '#0f172a';
+      }
+      
+      // Força cores específicas no content
+      if (expander.classList && expander.classList.contains('streamlit-expanderContent')) {
+        expander.style.background = '#ffffff';
+        expander.style.backgroundColor = '#ffffff';
+        expander.style.color = '#0f172a';
+      }
+      
+      // Força cores em todos os botões dentro do expander
+      const buttons = expander.querySelectorAll('button');
+      buttons.forEach(function(btn) {
+        btn.style.background = 'linear-gradient(135deg, #ffffff, #f8fafc)';
+        btn.style.backgroundColor = '#ffffff';
+        btn.style.color = '#0f172a';
+        btn.style.border = 'none';
+      });
+      
+      // Força cores em todos os elementos de texto dentro do expander
+      const textElements = expander.querySelectorAll('span, div, p, label, strong, b');
+      textElements.forEach(function(el) {
+        el.style.color = '#0f172a';
+        el.style.backgroundColor = 'transparent';
+      });
+    });
+  }
+  
   // Aplica tema claro em todos os elementos existentes
   function applyLightTheme() {
     const allElements = document.querySelectorAll('*');
@@ -535,6 +679,9 @@ CSS = """
       el.setAttribute('data-theme', 'light');
       el.style.colorScheme = 'light';
     });
+    
+    // Aplica tema específico em expanders
+    forceExpanderLightTheme();
   }
   
   // Aplica imediatamente
@@ -547,8 +694,37 @@ CSS = """
     applyLightTheme();
   }
   
+  // Observa especificamente mudanças em expanders
+  const expanderObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) {
+          if (node.matches && (node.matches('[data-testid="stExpander"]') || node.matches('.streamlit-expanderHeader') || node.matches('.streamlit-expanderContent'))) {
+            forceExpanderLightTheme();
+          }
+          // Verifica se contém expanders
+          const nestedExpanders = node.querySelectorAll ? node.querySelectorAll('[data-testid="stExpander"], .streamlit-expanderHeader, .streamlit-expanderContent') : [];
+          if (nestedExpanders.length > 0) {
+            forceExpanderLightTheme();
+          }
+        }
+      });
+    });
+  });
+  
+  // Inicia observação específica para expanders
+  expanderObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'aria-expanded']
+  });
+  
   // Aplica periodicamente para garantir (fallback)
-  setInterval(applyLightTheme, 1000);
+  setInterval(function() {
+    applyLightTheme();
+    forceExpanderLightTheme();
+  }, 500);
 })();
 </script>
 """
@@ -556,6 +732,7 @@ CSS = """
 # -----------------------------------------------------------------------------
 # Configuração Supabase para inserção de produtos
 # -----------------------------------------------------------------------------
+
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
 
