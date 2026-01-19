@@ -36,17 +36,25 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
 # Estilos globais - tema claro forçado
 CSS = """
 <style>
-  :root {
+  :root,
+  html,
+  body {
+    color-scheme: light !important;
+    background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important;
+    background-color: #f4f7fb !important;
+    color: #0f172a !important;
+  }
+  
+  * {
     color-scheme: light !important;
   }
   
   html, body, .stApp {
-    color-scheme: light !important;
     background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important;
+    background-color: #f4f7fb !important;
   }
   
   .stApp > header,
@@ -54,8 +62,11 @@ CSS = """
   main,
   .block-container,
   [data-testid="stAppViewContainer"],
-  [data-testid="stHeader"] {
+  [data-testid="stHeader"],
+  [data-testid="stAppViewContainer"] > div,
+  [data-testid="stHeader"] > div {
     background-color: #f4f7fb !important;
+    background: #f4f7fb !important;
     color: #0f172a !important;
   }
   
@@ -66,6 +77,7 @@ CSS = """
   .streamlit-expanderHeader { background: linear-gradient(135deg, #e8f5e9, #e3f2fd); color: #0f172a; border-radius: 8px; padding: 10px 12px; }
   .streamlit-expanderContent { background: #ffffff; border-radius: 0 0 8px 8px; padding: 12px; }
   
+  /* Botões secundários da navbar */
   div[data-testid="column"] .stButton>button[kind="secondary"],
   .stButton>button[kind="secondary"],
   button[kind="secondary"] {
@@ -83,6 +95,50 @@ CSS = """
     line-height: 1.2 !important;
     padding: 10px 8px !important;
     box-sizing: border-box !important;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  div[data-testid="column"] .stButton>button[kind="secondary"]:hover,
+  .stButton>button[kind="secondary"]:hover,
+  button[kind="secondary"]:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
+  }
+  
+  /* TODOS os botões - força cores claras */
+  .stButton>button,
+  button[data-baseweb="button"],
+  button[kind="primary"],
+  button[kind="secondary"],
+  button[kind="tertiary"],
+  button {
+    background-color: #ffffff !important;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  
+  .stButton>button:hover,
+  button[data-baseweb="button"]:hover,
+  button[kind="primary"]:hover,
+  button[kind="secondary"]:hover,
+  button[kind="tertiary"]:hover,
+  button:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
+    color: #0f172a !important;
+  }
+  
+  /* Botões primary mantêm cor primária mas com fundo claro */
+  .stButton>button[kind="primary"],
+  button[kind="primary"] {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    color: #ffffff !important;
+    border: 1px solid #1e40af !important;
+  }
+  
+  .stButton>button[kind="primary"]:hover,
+  button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
   }
   
   
@@ -110,6 +166,71 @@ CSS = """
   .stMultiSelect div[data-baseweb="select"] svg,
   .stSelectbox div[data-baseweb="select"] svg {
     fill: #0f172a !important;
+  }
+
+  .stSelectbox div[data-baseweb="select"] button,
+  .stMultiSelect div[data-baseweb="select"] button,
+  [data-baseweb="select"] button,
+  .stSelectbox div[data-baseweb="select"] button:focus,
+  .stMultiSelect div[data-baseweb="select"] button:focus {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .streamlit-expanderHeader button:focus,
+  .streamlit-expanderHeader button {
+    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores claras em dropdowns e menus de filtros */
+  [data-baseweb="popover"],
+  [data-baseweb="menu"],
+  [role="listbox"],
+  [role="option"],
+  .stSelectbox [data-baseweb="popover"],
+  .stMultiSelect [data-baseweb="popover"] {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  
+  [data-baseweb="popover"] [role="option"],
+  [data-baseweb="menu"] [role="option"],
+  [role="listbox"] [role="option"] {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  [data-baseweb="popover"] [role="option"]:hover,
+  [data-baseweb="menu"] [role="option"]:hover,
+  [role="listbox"] [role="option"]:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores claras em expanders e seus conteúdos */
+  .streamlit-expanderHeader {
+    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
+    color: #0f172a !important;
+  }
+  
+  .streamlit-expanderContent {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores claras em todos os elementos dentro de expanders */
+  .streamlit-expanderContent * {
+    color: #0f172a !important;
+  }
+  
+  .streamlit-expanderContent p,
+  .streamlit-expanderContent div,
+  .streamlit-expanderContent span,
+  .streamlit-expanderContent markdown {
+    color: #0f172a !important;
   }
   
   .js-plotly-plot,
@@ -142,15 +263,200 @@ CSS = """
     background: #ffffff !important;
     color: #0f172a !important;
   }
+  
+  /* Força tema claro em todos os elementos genéricos */
+  div,
+  span,
+  p,
+  h1, h2, h3, h4, h5, h6,
+  section,
+  article,
+  aside,
+  header,
+  footer,
+  nav,
+  ul, ol, li,
+  table, tr, td, th,
+  label,
+  caption {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força fundo claro em containers e cards */
+  [class*="container"],
+  [class*="card"],
+  [class*="box"],
+  [class*="panel"],
+  [class*="section"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores em elementos de texto */
+  p, span, div, label, caption, td, th {
+    color: #0f172a !important;
+  }
+  
+  /* Força fundo branco em elementos de formulário */
+  form,
+  fieldset,
+  legend {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+  
+  /* Remove qualquer herança de tema escuro */
+  [data-theme="dark"],
+  [class*="dark"],
+  [class*="Dark"] {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores em elementos do Streamlit que podem herdar do sistema */
+  [data-testid],
+  [data-baseweb],
+  [role] {
+    color-scheme: light !important;
+  }
+  
+  /* Garante que todos os elementos dentro do app tenham fundo claro */
+  .stApp * {
+    color-scheme: light !important;
+  }
+  
+  /* Força cores em elementos de lista e tabela */
+  ul, ol {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+  
+  li {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+  
+  table {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  td, th {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores em elementos de markdown */
+  .stMarkdown,
+  .stMarkdown *,
+  [data-testid="stMarkdownContainer"],
+  [data-testid="stMarkdownContainer"] * {
+    background-color: transparent !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores em elementos de dataframe */
+  [data-testid="stDataFrame"],
+  [data-testid="stDataFrame"] * {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  
+  /* Força cores em elementos de info/warning/error */
+  .stInfo,
+  .stWarning,
+  .stError,
+  .stSuccess {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
 </style>
+<script>
+(function() {
+  // Força tema claro no documento
+  document.documentElement.setAttribute('data-theme', 'light');
+  document.documentElement.style.colorScheme = 'light';
+  document.body.style.colorScheme = 'light';
+  
+  // Remove classes de tema escuro
+  document.documentElement.classList.remove('dark', 'Dark');
+  document.body.classList.remove('dark', 'Dark');
+  
+  // Observa mudanças no DOM para aplicar tema claro em elementos novos
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) { // Element node
+          // Remove classes de tema escuro
+          if (node.classList) {
+            node.classList.remove('dark', 'Dark');
+          }
+          // Força tema claro
+          node.setAttribute('data-theme', 'light');
+          node.style.colorScheme = 'light';
+          
+          // Aplica em todos os filhos
+          const allChildren = node.querySelectorAll('*');
+          allChildren.forEach(function(child) {
+            if (child.classList) {
+              child.classList.remove('dark', 'Dark');
+            }
+            child.setAttribute('data-theme', 'light');
+            child.style.colorScheme = 'light';
+          });
+        }
+      });
+    });
+  });
+  
+  // Inicia observação
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Aplica tema claro em todos os elementos existentes
+  function applyLightTheme() {
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(function(el) {
+      if (el.classList) {
+        el.classList.remove('dark', 'Dark');
+      }
+      el.setAttribute('data-theme', 'light');
+      el.style.colorScheme = 'light';
+    });
+  }
+  
+  // Aplica imediatamente
+  applyLightTheme();
+  
+  // Aplica após carregamento completo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyLightTheme);
+  } else {
+    applyLightTheme();
+  }
+  
+  // Aplica periodicamente para garantir (fallback)
+  setInterval(applyLightTheme, 1000);
+})();
+</script>
 """
 
 # -----------------------------------------------------------------------------
 # Configuração Supabase para inserção de produtos
 # -----------------------------------------------------------------------------
 load_dotenv()
+
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_KEY")  # Renomeado para ser mais claro
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_KEY")
+
+# SUPABASE_URL = st.secrets["SUPABASE_URL"]
+# SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
 
 # Estado global do Supabase (será inicializado conforme necessário)
 supabase: Client = None
@@ -702,7 +1008,7 @@ MESES_LABELS = {
     "NOV": "Novembro",
     "DEZ": "Dezembro",
 }
-RELATORIO_MES = "Dezembro"
+RELATORIO_MES = datetime.now().month
 
 
 def sentiment_icon(sent):
@@ -952,6 +1258,15 @@ def render_calendar_list(produtos: List[Dict], analises: List[Dict]) -> None:
     )
 
 
+def enforce_plotly_theme(fig):
+    fig.update_layout(
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font_color="#0f172a",
+        legend=dict(font=dict(color="#0f172a")),
+    )
+
+
 def render_metrics(calendar_data: Dict, analyses: List[Dict]) -> None:
     total_produtos = len(calendar_data["produtos"])
     produtos_tracked = sum(1 for p in calendar_data["produtos"] if p.get("no_relatorio", False))
@@ -1105,6 +1420,7 @@ def render_stats(analises: List[Dict]) -> None:
                 textfont=dict(size=16, color="#ffffff"),
                 texttemplate="<b>%{label}</b><br><b>%{percent}</b>"
             )
+            enforce_plotly_theme(fig)
             fig.update_layout(showlegend=True, margin=dict(l=0, r=0, t=0, b=0), height=320)
             st.plotly_chart(fig, use_container_width=True)
         with c2:
@@ -1114,6 +1430,7 @@ def render_stats(analises: List[Dict]) -> None:
             df_pais_counts = df["pais"].value_counts().reset_index(name="count").rename(columns={"index": "pais"})
             bar_fig = px.bar(df_pais_counts, x="pais", y="count", text="count")
             bar_fig.update_traces(textposition="outside")
+            enforce_plotly_theme(bar_fig)
             bar_fig.update_layout(height=320, margin=dict(l=0, r=0, t=0, b=0))
             st.plotly_chart(bar_fig, use_container_width=True)
 
@@ -1190,73 +1507,6 @@ def main():
     # Aplica tema claro
     st.markdown(CSS, unsafe_allow_html=True)
     
-    # JavaScript para forçar tema claro mesmo com sistema em modo escuro
-    st.markdown("""
-    <script>
-    (function() {
-        // Força color-scheme: light no documento
-        document.documentElement.style.colorScheme = 'light';
-        document.documentElement.setAttribute('data-theme', 'light');
-        
-        // Remove qualquer atributo de tema escuro
-        document.documentElement.removeAttribute('data-dark-mode');
-        document.documentElement.classList.remove('dark');
-        
-        // Força tema claro no body
-        if (document.body) {
-            document.body.style.colorScheme = 'light';
-            document.body.classList.remove('dark');
-        }
-        
-        // Força cores claras em elementos do Streamlit
-        function forceLightTheme() {
-            const elements = document.querySelectorAll('[class*="dark"], [data-theme="dark"]');
-            elements.forEach(el => {
-                el.classList.remove('dark');
-                el.setAttribute('data-theme', 'light');
-                el.style.colorScheme = 'light';
-            });
-            
-            // Força cores claras em inputs e selects
-            const inputs = document.querySelectorAll('input, select, textarea, [data-baseweb="select"], [data-baseweb="input"]');
-            inputs.forEach(el => {
-                el.style.backgroundColor = '#ffffff';
-                el.style.color = '#0f172a';
-                el.style.borderColor = '#cbd5e1';
-            });
-            
-            // Força cores claras em gráficos Plotly
-            const plotlyCharts = document.querySelectorAll('.js-plotly-plot, .plotly, .plot-container');
-            plotlyCharts.forEach(el => {
-                el.style.backgroundColor = '#ffffff';
-            });
-        }
-        
-        // Executa imediatamente e periodicamente
-        forceLightTheme();
-        setTimeout(forceLightTheme, 100);
-        setTimeout(forceLightTheme, 500);
-        
-        // Observa mudanças e força tema claro continuamente
-        const observer = new MutationObserver(function() {
-            document.documentElement.style.colorScheme = 'light';
-            document.documentElement.setAttribute('data-theme', 'light');
-            if (document.body) {
-                document.body.style.colorScheme = 'light';
-            }
-            forceLightTheme();
-        });
-        
-        observer.observe(document.documentElement, { 
-            attributes: true, 
-            attributeFilter: ['class', 'data-theme', 'data-dark-mode'],
-            subtree: true
-        });
-        observer.observe(document.body, { attributes: true, subtree: true });
-    })();
-    </script>
-    """, unsafe_allow_html=True)
-
     st.title("Dashboard Inteligência de Safra")
     st.markdown(f"**Relatório referente a:** {RELATORIO_MES}")
 
