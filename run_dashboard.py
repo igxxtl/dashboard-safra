@@ -1814,7 +1814,7 @@ def main():
     st.markdown(CSS, unsafe_allow_html=True)
     
     st.title("Dashboard Inteligência de Safra")
-    st.markdown(f"**Relatório referente a:** {RELATORIO_MES}")
+    st.markdown(f"**Relatório referente a ** {RELATORIO_MES}")
 
     # Telas:
     # 1) Inicial: lembrete de produtos em alerta (sentimento NEGATIVO)
