@@ -1820,7 +1820,7 @@ def main() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     
     st.title("Dashboard Inteligência de Safra")
-    st.markdown(f"Relatório referente a {RELATORIO_MES}")
+    st.markdown(f"Relatório referente ao mês de {RELATORIO_MES}")
 
     if "screen" not in st.session_state:
         st.session_state.screen = "inicio"
