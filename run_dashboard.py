@@ -1846,7 +1846,7 @@ def main():
         
         # Distribuição melhorada das colunas (espaço equilibrado para todos os botões)
         col_nav = st.columns([1, 1, 1, 1.3, 1.3, 1, 1])
-        if col_nav[1].button("Inicial", key="nav_inicio", use_container_width=True, type="secondary", help="Produtos em alerta"):
+        if col_nav[1].button("Tela Inicial", key="nav_inicio", use_container_width=True, type="secondary", help="Produtos em alerta"):
             st.session_state.screen = "inicio"
         if col_nav[2].button("Calendário", key="nav_principal", use_container_width=True, type="secondary", help="Métricas e calendário"):
             st.session_state.screen = "principal"
