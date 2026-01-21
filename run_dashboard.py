@@ -1766,7 +1766,7 @@ def render_stats(analises: List[Dict[str, Any]]) -> None:
 def render_alerts_view(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
     """Screen 1: alert products reminder (NEGATIVE sentiment)."""
     section_title("Produtos em Alerta")
-    st.caption("Lista de produtos com perspectiva NEGATIVA. Use esta visão para checar rapidamente o que exige atenção imediata.")
+    st.caption("Lista de produtos com perspectiva NEGATIVA. Utilize o resumo para identificar rapidamente o cenário e validar as informações nas notícias.")
     alertas = [a for a in ana["analises"] if a.get("sentimento") == "NEGATIVO"]
     if not alertas:
         st.info("Nenhum produto em alerta no momento.")
@@ -1791,7 +1791,7 @@ def render_home(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
 
     st.markdown("---")
     section_subtitle("Calendário de Safra")
-    st.caption("Aqui você vê, mês a mês, todos os produtos; os rastreados aparecem com a bolinha da cor da avaliação.")
+    st.caption("Aqui você vê, mês a mês, o calendário de safras, referente aos períodos de colheita de cada produto. Os produtos presentes no relatório deste mês estão destacados em amarelo, e a bolinha indica o status da safra.")
     render_calendar_list(cal["produtos"], ana["analises"])
 
 
