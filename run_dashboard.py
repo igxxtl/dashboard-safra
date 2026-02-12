@@ -1,35 +1,18 @@
-"""
-Dashboard interativo (Streamlit) combinando:
-- `dashboard_calendar.json` (calendário de safra)
-- `dashboard_data.json` (análises e links)
-
-Recursos:
-- Filtros por sentimento e país
-- Métricas principais
--
-- Análises detalhadas com links
-- Distribuições por sentimento e país
-"""
-
 import html
 import json
 import os
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, Any
 
 import boto3
 import pandas as pd
 import plotly.express as px
+from plotly.graph_objects import Figure
 import streamlit as st
 import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from supabase import create_client, Client
-
-
-# -----------------------------------------------------------------------------
-# Configuração da página
-# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Dashboard Safra (Piloto)",
     page_icon="🌾",
@@ -70,12 +53,9 @@ CSS = """
     color: #0f172a !important;
   }
   
-  .stApp { background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important; }
-  main .block-container { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-  .section-title { font-size: 24px; font-weight: 800; color: #0f172a; padding: 8px 0 4px 0; margin: 0 0 8px 0; letter-spacing: 0.2px; border-bottom: 2px solid #d7deeb; }
-  .section-subtitle { font-size: 18px; font-weight: 700; color: #111827; padding: 4px 0 2px 0; margin: 0 0 6px 0; }
-  .streamlit-expanderHeader { background: linear-gradient(135deg, #e8f5e9, #e3f2fd); color: #0f172a; border-radius: 8px; padding: 10px 12px; }
-  .streamlit-expanderContent { background: #ffffff; border-radius: 0 0 8px 8px; padding: 12px; }
+  .stApp { 
+    background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important; 
+  }
   
   /* Botões secundários da navbar */
   div[data-testid="column"] .stButton>button[kind="secondary"],
@@ -150,7 +130,20 @@ CSS = """
   .stTextArea div[data-baseweb="input"] {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .stMultiSelect div[data-baseweb="select"]:focus-within,
+  .stSelectbox div[data-baseweb="select"]:focus-within,
+  .stTextInput div[data-baseweb="input"]:focus-within,
+  .stNumberInput div[data-baseweb="input"]:focus-within,
+  .stDateInput div[data-baseweb="input"]:focus-within,
+  .stTextArea div[data-baseweb="input"]:focus-within {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08) !important;
   }
   
   .stMultiSelect input,
@@ -252,14 +245,43 @@ CSS = """
   .stContainer,
   [data-testid="stVerticalBlock"] {
     background-color: transparent !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
   
-  .streamlit-expanderHeader {
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
+  /* Garante que containers não sobreponham conteúdo */
+  .stContainer > *,
+  [data-testid="stVerticalBlock"] > * {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+  
+  /* Força tema claro em todos os elementos genéricos */
+  div,
+  span,
+  p,
+  h1, h2, h3, h4, h5, h6,
+  section,
+  article,
+  aside,
+  header,
+  footer,
+  nav,
+  ul, ol, li,
+  table, tr, td, th,
+  label,
+  caption {
+    background-color: transparent !important;
     color: #0f172a !important;
   }
   
-  .streamlit-expanderContent {
+  /* Força fundo claro em containers e cards */
+  [class*="container"],
+  [class*="card"],
+  [class*="box"],
+  [class*="panel"],
+  [class*="section"] {
+    background-color: #ffffff !important;
     background: #ffffff !important;
     color: #0f172a !important;
   }
@@ -458,30 +480,24 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_KEY")
 # SUPABASE_URL = st.secrets["SUPABASE_URL"]
 # SUPABASE_ANON_KEY = st.secrets["SUPABASE_KEY"]
 
-# Estado global do Supabase (será inicializado conforme necessário)
-supabase: Client = None
-# Tokens de sessão armazenados na sessão do Streamlit
+supabase: Optional[Client] = None
 if "sb_access_token" not in st.session_state:
     st.session_state.sb_access_token = ""
 if "sb_refresh_token" not in st.session_state:
     st.session_state.sb_refresh_token = ""
 
-def initialize_supabase():
-    """Inicializa cliente Supabase se ainda não foi feito."""
+def initialize_supabase() -> None:
+    """Initialize Supabase client if not already done."""
     global supabase
     if supabase is None and SUPABASE_URL and SUPABASE_ANON_KEY:
         supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def ensure_session() -> bool:
-    """
-    Garante que o cliente supabase tenha uma sessão válida.
-    Retorna True se usuário estiver autenticado, False caso contrário.
-    """
+    """Ensure Supabase client has a valid session. Returns True if user is authenticated."""
     initialize_supabase()
     if not supabase:
         return False
 
-    # Se temos tokens guardados, restaura sessão e tenta refresh
     if st.session_state.sb_access_token and st.session_state.sb_refresh_token:
         try:
             supabase.auth.set_session(
@@ -489,9 +505,8 @@ def ensure_session() -> bool:
                 refresh_token=st.session_state.sb_refresh_token,
             )
         except Exception as e:
-            st.write(f"[debug] set_session falhou: {e}")
+            st.write(f"[debug] set_session failed: {e}")
 
-    # Tenta obter usuário atual; se falhar, tenta refresh explícito
     try:
         user_resp = supabase.auth.get_user()
         if user_resp and getattr(user_resp, "user", None):
@@ -506,7 +521,6 @@ def ensure_session() -> bool:
             if refresh and getattr(refresh, "session", None):
                 st.session_state.sb_access_token = refresh.session.access_token
                 st.session_state.sb_refresh_token = refresh.session.refresh_token
-                # testa novamente
                 user_resp = supabase.auth.get_user()
                 return bool(user_resp and getattr(user_resp, "user", None))
         except Exception:
@@ -514,11 +528,11 @@ def ensure_session() -> bool:
     return False
 
 def is_user_authenticated() -> bool:
-    """Verifica se o usuário está autenticado."""
+    """Check if user is authenticated."""
     return ensure_session()
 
 def authenticate_user(email: str, password: str) -> bool:
-    """Faz login do usuário no Supabase."""
+    """Authenticate user with Supabase."""
     if not supabase:
         initialize_supabase()
         if not supabase:
@@ -529,13 +543,11 @@ def authenticate_user(email: str, password: str) -> bool:
             {"email": email, "password": password}
         )
 
-        # Armazena tokens para reuso entre reruns
         session = response.session
         if session and session.access_token and session.refresh_token:
             st.session_state.sb_access_token = session.access_token
             st.session_state.sb_refresh_token = session.refresh_token
         else:
-            # fallback: tenta pegar sessão atual
             current = supabase.auth.get_session()
             if current and current.access_token and current.refresh_token:
                 st.session_state.sb_access_token = current.access_token
@@ -543,38 +555,29 @@ def authenticate_user(email: str, password: str) -> bool:
 
         return True
     except Exception as e:
-        st.error(f"Erro de autenticação: {e}")
+        st.error(f"Authentication error: {e}")
         return False
 
-def logout_user():
-    """Faz logout do usuário."""
+def logout_user() -> None:
+    """Logout user."""
     if supabase:
         try:
             supabase.auth.sign_out()
         except:
             pass
 
-    # Limpa tokens armazenados
     st.session_state.sb_access_token = ""
     st.session_state.sb_refresh_token = ""
 
-def auth_status_badge():
-    """Retorna um texto curto com o status atual do ensure_session()."""
+def auth_status_badge() -> str:
+    """Return a short text with current ensure_session() status."""
     ok = ensure_session()
     token_ok = bool(st.session_state.sb_access_token and st.session_state.sb_refresh_token)
     return f"{'🟢' if ok else '🔴'} sessão {'ok' if ok else 'inválida'} • tokens {'ok' if token_ok else 'ausentes'}"
 
-def get_aws_credentials():
-    """
-    Obtém credenciais AWS do st.secrets.
-    
-    IMPORTANTE: st.secrets só existe no servidor Python, NUNCA no navegador.
-    As credenciais são lidas apenas no servidor e nunca expostas ao frontend.
-    
-    Retorna: (aws_key, aws_secret, lambda_function_name, region)
-    """
+def get_aws_credentials() -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """Get AWS credentials from st.secrets. Returns (aws_key, aws_secret, lambda_function_name, region)."""
     try:
-        # st.secrets é acessível apenas no servidor Streamlit, nunca no cliente
         aws_key = st.secrets["AWS_KEY"]
         aws_secret = st.secrets["AWS_SECRET"]
         lambda_function_name = st.secrets.get("LAMBDA_NAME", "plano-safra")
@@ -583,28 +586,17 @@ def get_aws_credentials():
     except (KeyError, AttributeError):
         return None, None, None, None
 
-def trigger_lambda():
-    """
-    Dispara a função Lambda usando boto3.
-    
-    SEGURANÇA: Esta função executa 100% no servidor Python.
-    As credenciais AWS nunca são enviadas ao navegador.
-    
-    Retorna: (success: bool, message: str)
-    """
-    # Verificar autenticação
+def trigger_lambda() -> Tuple[bool, str]:
+    """Trigger Lambda function using boto3. Returns (success: bool, message: str)."""
     if not ensure_session():
         return False, "Usuário não autenticado. Faça login para executar esta ação."
     
-    # Obter credenciais do secrets.toml (apenas no servidor)
     aws_key, aws_secret, lambda_function_name, region = get_aws_credentials()
     
     if not aws_key or not aws_secret:
         return False, "Credenciais AWS não configuradas em secrets.toml"
     
     try:
-        # Criar cliente Lambda (executado apenas no servidor)
-        # As credenciais nunca saem do servidor Python
         lambda_client = boto3.client(
             "lambda",
             aws_access_key_id=aws_key,
@@ -612,10 +604,9 @@ def trigger_lambda():
             region_name=region
         )
         
-        # Invocar Lambda (chamada HTTP feita pelo servidor, não pelo navegador)
         response = lambda_client.invoke(
             FunctionName=lambda_function_name,
-            InvocationType="Event",  # Assíncrono
+            InvocationType="Event",
             Payload=json.dumps({})
         )
         
@@ -628,7 +619,6 @@ def trigger_lambda():
             
     except Exception as e:
         error_msg = str(e)
-        # Mensagens de erro genéricas (nunca expõem credenciais)
         if "UnrecognizedClientException" in error_msg or "InvalidClientTokenId" in error_msg:
             return False, "Credenciais AWS inválidas ou expiradas. Verifique secrets.toml"
         elif "ResourceNotFoundException" in error_msg:
@@ -636,16 +626,12 @@ def trigger_lambda():
         elif "AccessDeniedException" in error_msg:
             return False, "Credenciais não têm permissão para invocar a função Lambda"
         else:
-            # Não expor detalhes do erro que possam conter informações sensíveis
             return False, "Erro ao disparar Lambda. Verifique as configurações."
 
-# -----------------------------------------------------------------------------
-# Constantes globais
-# -----------------------------------------------------------------------------
 TARGET_YEAR = datetime.now().year
 
 def check_product_exists(produto: str, local: str) -> bool:
-    """Verifica se o produto já existe na tabela monitored_products."""
+    """Check if product already exists in monitored_products table."""
     try:
         ensure_session()
         response = (
@@ -660,7 +646,7 @@ def check_product_exists(produto: str, local: str) -> bool:
         return False
 
 def insert_new_product(produto: str, local: str) -> bool:
-    """Insere um novo produto na tabela monitored_products."""
+    """Insert a new product into monitored_products table."""
     try:
         ensure_session()
         user_resp = supabase.auth.get_user()
@@ -672,7 +658,7 @@ def insert_new_product(produto: str, local: str) -> bool:
             "STATUS": "ADICIONADO"
         }
         if user_id:
-            payload["CRIADO_POR"] = user_id  # respeita políticas RLS típicas
+            payload["CRIADO_POR"] = user_id
 
         response = supabase.table("monitored_products").insert(payload).execute()
 
@@ -684,8 +670,8 @@ def insert_new_product(produto: str, local: str) -> bool:
     except Exception:
         return False
 
-def render_product_insertion_form():
-    """Renderiza apenas o formulário de inserção de produtos."""
+def render_product_insertion_form() -> None:
+    """Render product insertion form."""
     col1, col2 = st.columns(2)
 
     st.caption(f"Status da sessão: {auth_status_badge()}")
@@ -706,7 +692,6 @@ def render_product_insertion_form():
             key="local_input"
         )
 
-    # Validação e inserção
     if st.button("Verificar e Inserir", type="primary", use_container_width=True, key="insert_button"):
         if not produto_input.strip() or not local_input.strip():
             st.error("Preencha ambos os campos (Produto e Local).")
@@ -728,39 +713,38 @@ def render_product_insertion_form():
             if success:
                 st.success(f"Produto **{produto_input.upper()}** inserido com sucesso para **{local_input}**!")
                 st.info("O produto será processado automaticamente no próximo pipeline de análise.")
-                # Limpar campos usando rerun para resetar o form
                 st.rerun()
             else:
                 st.error("Erro ao inserir o produto. Tente novamente.")
                 st.caption("Se o erro persistir, verifique permissões RLS e o campo CRIADO_POR.")
 
-    # Lista de produtos recentes
     st.markdown("---")
     section_subtitle("Produtos Recentes Adicionados")
 
-    try:
-        recent_response = supabase.table("monitored_products").select("PRODUTO, LOCAL, STATUS, DATA_CRIACAO").eq("STATUS", "ADICIONADO").order("DATA_CRIACAO", desc=True).limit(10).execute()
+    with st.container():
+        try:
+            recent_response = supabase.table("monitored_products").select("PRODUTO, LOCAL, STATUS, DATA_CRIACAO").eq("STATUS", "ADICIONADO").order("DATA_CRIACAO", desc=True).limit(10).execute()
 
-        if recent_response.data:
-            recent_df = pd.DataFrame(recent_response.data)
-            recent_df['DATA_CRIACAO'] = pd.to_datetime(recent_df['DATA_CRIACAO']).dt.strftime('%d/%m/%Y %H:%M')
+            if recent_response.data:
+                recent_df = pd.DataFrame(recent_response.data)
+                recent_df['DATA_CRIACAO'] = pd.to_datetime(recent_df['DATA_CRIACAO']).dt.strftime('%d/%m/%Y %H:%M')
 
-            st.dataframe(
-                recent_df[['PRODUTO', 'LOCAL', 'STATUS', 'DATA_CRIACAO']],
-                use_container_width=True,
-                column_config={
-                    "PRODUTO": st.column_config.TextColumn("Produto"),
-                    "LOCAL": st.column_config.TextColumn("Local"),
-                    "STATUS": st.column_config.TextColumn("Status")
-                }
-            )
-        else:
-            st.info("Nenhum produto adicionado recentemente.")
-    except Exception as e:
-        st.error(f"Erro ao carregar produtos recentes: {e}")
+                st.dataframe(
+                    recent_df[['PRODUTO', 'LOCAL', 'STATUS', 'DATA_CRIACAO']],
+                    use_container_width=True,
+                    column_config={
+                        "PRODUTO": st.column_config.TextColumn("Produto"),
+                        "LOCAL": st.column_config.TextColumn("Local"),
+                        "STATUS": st.column_config.TextColumn("Status")
+                    }
+                )
+            else:
+                st.info("Nenhum produto adicionado recentemente.")
+        except Exception as e:
+            st.error(f"Erro ao carregar produtos recentes: {e}")
 
-def render_insert_product_view():
-    """Renderiza a tela de inserção de produtos."""
+def render_insert_product_view() -> None:
+    """Render product insertion view."""
     section_title("Inserir Novo Produto")
 
     initialize_supabase()
@@ -768,13 +752,11 @@ def render_insert_product_view():
         st.error("Configuração do Supabase não encontrada. Verifique as variáveis de ambiente.")
         return
 
-    # Inicializar estado de login na sessão se não existir
     if "login_success" not in st.session_state:
         st.session_state.login_success = False
     if "user_email" not in st.session_state:
         st.session_state.user_email = ""
 
-    # Verificar se usuário está autenticado
     if not ensure_session():
         st.markdown("""
         🔐 **Autenticação necessária**
@@ -802,11 +784,9 @@ def render_insert_product_view():
                 else:
                     st.error("Preencha email e senha.")
 
-    # Se login foi bem-sucedido, mostrar o formulário diretamente
     if st.session_state.login_success:
         st.info("**Login realizado!** O formulário de inserção será mostrado abaixo.")
 
-        # Mostrar diretamente o formulário de inserção após login
         user_email = st.session_state.user_email or "Usuário"
 
         st.success(f"Logado como: {user_email}")
@@ -829,7 +809,6 @@ def render_insert_product_view():
 
         render_product_insertion_form()
         
-        # Botão para disparar Lambda
         st.markdown("---")
         section_subtitle("Atualizar Safra")
         st.caption("Dispara o processamento da pipeline de análise de safra.")
@@ -845,7 +824,6 @@ def render_insert_product_view():
         
         return
 
-    # Usuário já estava autenticado (não passou pelo login)
     try:
         user_resp = supabase.auth.get_user()
         user_email = user_resp.user.email if user_resp and getattr(user_resp, "user", None) else st.session_state.user_email
@@ -872,7 +850,6 @@ def render_insert_product_view():
 
     render_product_insertion_form()
 
-    # Botão para disparar Lambda
     st.markdown("---")
     section_subtitle("Atualizar Relatório")
     st.caption("Inicia o processamento do algoritmo de análise de safra e atualiza o dashboard.")
@@ -886,34 +863,27 @@ def render_insert_product_view():
             else:
                 st.error(f"{message}")
 
-def section_title(text: str):
+def section_title(text: str) -> None:
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
-def section_subtitle(text: str):
+def section_subtitle(text: str) -> None:
     st.markdown(f'<div class="section-subtitle">{text}</div>', unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------------------------
-# Carregamento de dados
-# -----------------------------------------------------------------------------
 @st.cache_data
-def load_data():
-    """Carrega dados de calendário e análises do Supabase."""
+def load_data() -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Load calendar and analysis data from Supabase."""
     initialize_supabase()
     if not supabase:
         st.error("Conexão com Supabase não configurada.")
         return None, None
 
     try:
-        # Buscar dados da view dashboard
         dashboard_response = supabase.table("vw_dashboard_products").select("*").execute()
         dashboard_rows = dashboard_response.data or []
 
-        # Buscar dados de calendário (mantém compatibilidade com estrutura existente)
         calendar_response = supabase.table("vw_monitored_products").select("*").execute()
         calendar_rows = calendar_response.data or []
 
-        # Processar dados de análise (da coluna RESULTADO)
         analysis_data = {
             "metadata": {
                 "data_geracao": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -923,19 +893,16 @@ def load_data():
             "analises": []
         }
 
-        # Processar cada linha da view dashboard
         for row in dashboard_rows:
             resultado_json = row.get("RESULTADO")
             if resultado_json:
                 try:
-                    # Parse do JSON da coluna RESULTADO
                     analise = json.loads(resultado_json) if isinstance(resultado_json, str) else resultado_json
                     analysis_data["analises"].append(analise)
                 except json.JSONDecodeError as e:
                     st.warning(f"Erro ao processar JSON para produto {row.get('PRODUTO', 'desconhecido')}: {e}")
                     continue
 
-        # Processar dados de calendário (compatibilidade com estrutura existente)
         calendar_data = {
             "metadata": {
                 "gerado_em": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -944,13 +911,11 @@ def load_data():
             "produtos": []
         }
 
-        # Mapear produtos para formato de calendário
         mapa_meses = {
             "JAN": 1, "FEV": 2, "MAR": 3, "ABR": 4, "MAI": 5, "JUN": 6,
             "JUL": 7, "AGO": 8, "SET": 9, "OUT": 10, "NOV": 11, "DEZ": 12
         }
 
-        # Criar set de produtos que estão no relatório (análises)
         produtos_no_relatorio = {analise.get("produto", "").strip().upper() for analise in analysis_data["analises"]}
 
         for row in calendar_rows:
@@ -958,7 +923,6 @@ def load_data():
             safra = row.get("COLHEITA", "")
             local = row.get("LOCAL", "")
 
-            # Processar meses ativos baseado na safra
             meses_ativos = {mes: False for mes in MESES}
             if safra and isinstance(safra, str):
                 partes = [p.strip().upper() for p in safra.split('-')]
@@ -970,7 +934,6 @@ def load_data():
                         for i in range(ini, fim + 1):
                             meses_ativos[MESES[i-1]] = True
                     else:
-                        # Safra que cruza o ano (ex: DEZ-MAR)
                         for i in range(ini, 13):
                             meses_ativos[MESES[i-1]] = True
                         for i in range(1, fim + 1):
@@ -1014,9 +977,8 @@ RELATORIO_MES = datetime.now().month
 def sentiment_icon(sent):
     return ""
 
-
-def build_calendar_html(produtos: List[Dict]) -> str:
-    """Gera HTML + JS leve para um calendário com hover estável."""
+def build_calendar_html(produtos: List[Dict[str, Any]]) -> str:
+    """Generate HTML + JS for a calendar with stable hover."""
     por_mes = {m: [] for m in MESES}
     for item in produtos:
         nome = item.get("produto", "").strip()
@@ -1150,10 +1112,9 @@ def build_calendar_html(produtos: List[Dict]) -> str:
     return html
 
 
-def render_calendar_list(produtos: List[Dict], analises: List[Dict]) -> None:
-    """Renderiza lista mês a mês em cards compactos (sem hover)."""
+def render_calendar_list(produtos: List[Dict[str, Any]], analises: List[Dict[str, Any]]) -> None:
+    """Render month-by-month list in compact cards."""
     emoji_sent = {"POSITIVO": "🟢", "NEUTRO": "⚪", "NEGATIVO": "🔴"}
-    # Mapa de produto -> sentimento (normalizado em upper)
     mapa_sent = {}
     for a in analises:
         nome = (a.get("produto") or "").strip().upper()
@@ -1172,7 +1133,6 @@ def render_calendar_list(produtos: List[Dict], analises: List[Dict]) -> None:
             if meses.get(mes, False):
                 por_mes[mes].append({"nome": nome, "tracked": tracked, "emoji": emoji, "local": local})
 
-    # Monta HTML em grid responsivo
     cards_html = ""
     for mes in MESES:
         mes_label = MESES_LABELS.get(mes, mes)
@@ -1205,49 +1165,70 @@ def render_calendar_list(produtos: List[Dict], analises: List[Dict]) -> None:
             gap: 10px;
           }}
           .cal-card-list {{
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
             min-height: 140px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+          }}
+          .cal-card-list:hover {{
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
           }}
           .cal-card-header {{
-            padding: 10px 12px;
+            padding: 12px 14px;
             font-weight: 800;
             color: #0f172a;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 2px solid rgba(203, 213, 225, 0.3);
             text-align: center;
-            background: linear-gradient(135deg, #e0f2f1, #c8e6c9);
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            background: linear-gradient(135deg, #e0f2f1, #c8e6c9, #a7f3d0);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            letter-spacing: 0.3px;
           }}
           .cal-card-body {{
-            padding: 8px 12px 12px 12px;
+            padding: 10px 14px 14px 14px;
             font-size: 13px;
             color: #374151;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
+            background: linear-gradient(135deg, #ffffff, #fafbfc);
           }}
           .cal-item {{
-            padding: 4px 6px;
-            border-radius: 6px;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+            border: 1.5px solid #e5e7eb;
+            transition: all 0.2s ease;
+          }}
+          .cal-item:hover {{
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            transform: translateX(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
           }}
           .cal-item.cal-tracked {{
-            background: #fff7e6;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
             border-color: #facc15;
             color: #92400e;
             font-weight: 700;
+            box-shadow: 0 2px 6px rgba(250, 204, 21, 0.2);
+          }}
+          .cal-item.cal-tracked:hover {{
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
+            box-shadow: 0 4px 8px rgba(250, 204, 21, 0.3);
           }}
           .cal-item.cal-empty {{
             font-style: italic;
             color: #9ca3af;
-            background: #f3f4f6;
-            border: 1px dashed #e5e7eb;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border: 1.5px dashed #d1d5db;
           }}
         </style>
         <div class="cal-grid">
@@ -1280,46 +1261,76 @@ def render_metrics(calendar_data: Dict, analyses: List[Dict]) -> None:
         <style>
           .metric-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-top: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
           }
           .metric-block {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
           }
           .metric-title {
-            font-size: 13px;
-            color: #374151;
+            font-size: 14px;
+            color: #475569;
             margin: 0;
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
+            font-size: 12px;
           }
           .metric-card {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 6px 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            padding: 16px 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+            border: 1.5px solid #e5e7eb;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 110px;
+            min-height: 120px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+          }
+          .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          .metric-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08);
+            transform: translateY(-3px);
+            border-color: #cbd5e1;
+          }
+          .metric-card:hover::before {
+            opacity: 1;
           }
           .metric-value {
-            font-size: 36px;
-            color: #111827;
+            font-size: 42px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 0;
-            font-weight: 700;
+            font-weight: 800;
             line-height: 1.05;
+            letter-spacing: -0.5px;
           }
           .metric-sub {
-            font-size: 11px;
+            font-size: 12px;
             color: #6b7280;
-            margin: 4px 0 0 0;
+            margin: 6px 0 0 0;
+            font-weight: 500;
           }
         </style>
         """,
@@ -1360,12 +1371,10 @@ def render_metrics(calendar_data: Dict, analyses: List[Dict]) -> None:
     )
 
 
-def render_filters_in_column(col, analysis_data: Dict) -> tuple[list[str], list[str]]:
+def render_filters_in_column(col: Any, analysis_data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
     col.markdown("### Filtros")
     sentimentos = ["POSITIVO", "NEUTRO", "NEGATIVO"]
-    # Usa .get() para evitar KeyError e filtra valores vazios
     paises = sorted({a.get("pais", "") for a in analysis_data["analises"] if a.get("pais")})
-    # default vazio (mostra tudo), fallback para todos se nada selecionado
     sent_sel = col.multiselect("Perspectiva", sentimentos, default=[])
     pais_sel = col.multiselect("País", paises, default=[])
     if not sent_sel:
@@ -1375,7 +1384,7 @@ def render_filters_in_column(col, analysis_data: Dict) -> tuple[list[str], list[
     return sent_sel, pais_sel
 
 
-def render_analyses(analises: List[Dict]) -> None:
+def render_analyses(analises: List[Dict[str, Any]]) -> None:
     if not analises:
         st.warning("Nenhuma análise corresponde aos filtros selecionados.")
         return
@@ -1402,12 +1411,11 @@ def render_analyses(analises: List[Dict]) -> None:
                         st.caption(f"  Data: {link.get('data', 'N/A')}")
 
 
-def render_stats(analises: List[Dict]) -> None:
+def render_stats(analises: List[Dict[str, Any]]) -> None:
     c1, c2 = st.columns(2)
     if analises:
         with c1:
             section_subtitle("Distribuição por Sentimento")
-            # Usa .get() para evitar KeyError
             df = pd.DataFrame([a.get("sentimento", "NEUTRO") for a in analises], columns=["sentimento"])
             sent_counts = df["sentimento"].value_counts().reset_index()
             sent_counts.columns = ["sentimento", "contagem"]
@@ -1425,7 +1433,6 @@ def render_stats(analises: List[Dict]) -> None:
             st.plotly_chart(fig, use_container_width=True)
         with c2:
             section_subtitle("Distribuição por País")
-            # Usa .get() para evitar KeyError e filtra valores vazios
             df = pd.DataFrame([a.get("pais", "") for a in analises if a.get("pais")], columns=["pais"])
             df_pais_counts = df["pais"].value_counts().reset_index(name="count").rename(columns={"index": "pais"})
             bar_fig = px.bar(df_pais_counts, x="pais", y="count", text="count")
@@ -1435,10 +1442,10 @@ def render_stats(analises: List[Dict]) -> None:
             st.plotly_chart(bar_fig, use_container_width=True)
 
 
-def render_alerts_view(cal: Dict, ana: Dict) -> None:
-    """Tela 1: lembrete de produtos em alerta (sentimento NEGATIVO)."""
+def render_alerts_view(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
+    """Screen 1: alert products reminder (NEGATIVE sentiment)."""
     section_title("Produtos em Alerta")
-    st.caption("Lista de produtos com perspectiva NEGATIVA. Use esta visão para checar rapidamente o que exige atenção imediata.")
+    st.caption("Lista de produtos com perspectiva NEGATIVA. Utilize o resumo para identificar rapidamente o cenário e validar as informações nas notícias.")
     alertas = [a for a in ana["analises"] if a.get("sentimento") == "NEGATIVO"]
     if not alertas:
         st.info("Nenhum produto em alerta no momento.")
@@ -1449,29 +1456,26 @@ def render_alerts_view(cal: Dict, ana: Dict) -> None:
             st.markdown("**Resumo**")
             st.markdown(a.get("resumo", ""))
             if a.get("links"):
-                st.markdown("**Fontes (até 3):**")
-                for link in a["links"][:3]:
+                st.markdown("**Fontes (até 5):**")
+                for link in a["links"][:5]:
                     st.markdown(f"- [{link['titulo']}]({link['url']})")
                     st.caption(f"  Data: {link.get('data', 'N/A')}")
 
 
-# -----------------------------------------------------------------------------
-# Views
-# -----------------------------------------------------------------------------
-def render_home(cal: Dict, ana: Dict) -> None:
-    """Tela 2: principais (métricas, calendário, gráficos)."""
+def render_home(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
+    """Screen 2: main (metrics, calendar, charts)."""
     section_title("Calendário")
     section_subtitle("Métricas Principais")
     render_metrics(cal, ana["analises"])
 
     st.markdown("---")
     section_subtitle("Calendário de Safra")
-    st.caption("Aqui você vê, mês a mês, todos os produtos; os rastreados aparecem com a bolinha da cor da avaliação.")
+    st.caption("Aqui você vê, mês a mês, o calendário de safras, referente aos períodos de colheita de cada produto. Os produtos presentes no relatório deste mês estão destacados em amarelo, e a bolinha indica o status da safra.")
     render_calendar_list(cal["produtos"], ana["analises"])
 
 
-def render_analysis_view(cal: Dict, ana: Dict) -> None:
-    """Tela 3: análises detalhadas."""
+def render_analysis_view(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
+    """Screen 3: detailed analyses."""
     section_title("Análises")
     col_list, col_filters = st.columns([3, 1])
     sent_filter, pais_filter = render_filters_in_column(col_filters, ana)
@@ -1486,43 +1490,22 @@ def render_analysis_view(cal: Dict, ana: Dict) -> None:
     render_stats(analises_filtradas)
 
 
-# -----------------------------------------------------------------------------
-# Clima (desativado temporariamente)
-# -----------------------------------------------------------------------------
-# def render_clima_view(ana):
-#     section_title("Cenário Climático Global")
-#     st.caption(f"Atualizado em: {ana['metadata']['data_geracao']}")
-#     st.info(f"**{ana['metadata']['ano_alvo']}** — {ana['metadata']['cenario_climatico']}")
-
-
-# -----------------------------------------------------------------------------
-# Main
-# -----------------------------------------------------------------------------
-def main():
-    """Ponto de entrada do dashboard Streamlit."""
+def main() -> None:
+    """Main entry point for Streamlit dashboard."""
     cal, ana = load_data()
     if not cal or not ana:
         st.stop()
 
-    # Aplica tema claro
     st.markdown(CSS, unsafe_allow_html=True)
     
     st.title("Dashboard Inteligência de Safra")
-    st.markdown(f"**Relatório referente a:** {RELATORIO_MES}")
+    st.markdown(f"Relatório referente ao mês de {RELATORIO_MES}")
 
-    # Telas:
-    # 1) Inicial: lembrete de produtos em alerta (sentimento NEGATIVO)
-    # 2) Calendário: métricas, calendário, gráficos
-    # 3) Análises: lista e estatísticas detalhadas
-    # 4) Inserir Produto: adicionar novos produtos para monitoramento
-    # 5) Clima: cenário climático global (desativado)
     if "screen" not in st.session_state:
         st.session_state.screen = "inicio"
 
-    # Botões de navegação centralizados
     nav_container = st.container()
     with nav_container:
-        # CSS específico para garantir altura uniforme e texto em uma linha
         st.markdown("""
         <style>
         /* Força altura uniforme e texto em uma linha para todos os botões de navegação */
@@ -1538,9 +1521,8 @@ def main():
         </style>
         """, unsafe_allow_html=True)
         
-        # Distribuição melhorada das colunas (espaço equilibrado para todos os botões)
         col_nav = st.columns([1, 1, 1, 1.3, 1.3, 1, 1])
-        if col_nav[1].button("Inicial", key="nav_inicio", use_container_width=True, type="secondary", help="Produtos em alerta"):
+        if col_nav[1].button("Tela Inicial", key="nav_inicio", use_container_width=True, type="secondary", help="Produtos em alerta"):
             st.session_state.screen = "inicio"
         if col_nav[2].button("Calendário", key="nav_principal", use_container_width=True, type="secondary", help="Métricas e calendário"):
             st.session_state.screen = "principal"
@@ -1562,7 +1544,6 @@ def main():
     elif st.session_state.screen == "insert":
         render_insert_product_view()
     else:
-        # Clima desativado; fallback para tela principal
         render_home(cal, ana)
 
     st.markdown("---")
