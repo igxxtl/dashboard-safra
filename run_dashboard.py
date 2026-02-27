@@ -759,7 +759,7 @@ def render_insert_product_view() -> None:
 
     if not ensure_session():
         st.markdown("""
-        🔐 **Autenticação necessária**
+        **Autenticação necessária**
 
         Para inserir novos produtos, você precisa estar logado no sistema.
         """)
