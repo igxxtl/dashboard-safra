@@ -1464,7 +1464,8 @@ def render_alerts_view(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
 
 def render_home(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
     """Screen 2: main (metrics, calendar, charts)."""
-    section_title("Métricas Principais")
+    section_subtitle("Métricas Principais")
+    st.caption("Aqui você vê, as métricas do relatório atual. Quantidade de produtos cadastrados, quantidade de produtos em safra, quantidade de produtos encontrados.")
     render_metrics(cal, ana["analises"])
 
     st.markdown("---")
