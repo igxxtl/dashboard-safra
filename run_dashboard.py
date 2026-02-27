@@ -745,7 +745,6 @@ def render_product_insertion_form() -> None:
 
 def render_insert_product_view() -> None:
     """Render product insertion view."""
-    section_title("Inserir Novo Produto")
 
     initialize_supabase()
     if not supabase:
