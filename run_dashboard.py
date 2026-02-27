@@ -173,8 +173,8 @@ CSS = """
 
   .streamlit-expanderHeader button:focus,
   .streamlit-expanderHeader button {
-    background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important;
-    color: #0f172a !important;
+    background: linear-gradient(135deg, #e8f5e9, #ffffff) !important;
+    color: #ffffff !important;
   }
   
   /* Força cores claras em dropdowns e menus de filtros */
