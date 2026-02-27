@@ -1464,8 +1464,7 @@ def render_alerts_view(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
 
 def render_home(cal: Dict[str, Any], ana: Dict[str, Any]) -> None:
     """Screen 2: main (metrics, calendar, charts)."""
-    section_title("Calendário")
-    section_subtitle("Métricas Principais")
+    section_title("Métricas Principais")
     render_metrics(cal, ana["analises"])
 
     st.markdown("---")
@@ -1498,7 +1497,7 @@ def main() -> None:
 
     st.markdown(CSS, unsafe_allow_html=True)
     
-    st.title("Dashboard Inteligência de Safra")
+    st.title("Dashboard - Plano Safra")
     st.markdown(f"Relatório referente ao mês de {RELATORIO_MES}")
 
     if "screen" not in st.session_state:
