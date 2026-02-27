@@ -971,7 +971,7 @@ MESES_LABELS = {
     "NOV": "Novembro",
     "DEZ": "Dezembro",
 }
-RELATORIO_MES = datetime.now().month
+RELATORIO_MES = list(MESES_LABELS.values())[datetime.now().month - 1]
 
 
 def sentiment_icon(sent):
