@@ -37,7 +37,7 @@ CSS = """
   
   html, body, .stApp {
     background: linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%) !important;
-    background-color: #f4f7fb !important;
+    background-color: #ffffff !important;
   }
   
   .stApp > header,
@@ -48,9 +48,9 @@ CSS = """
   [data-testid="stHeader"],
   [data-testid="stAppViewContainer"] > div,
   [data-testid="stHeader"] > div {
-    background-color: #f4f7fb !important;
-    background: #f4f7fb !important;
-    color: #0f172a !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #ffffff !important;
   }
   
   .stApp { 
